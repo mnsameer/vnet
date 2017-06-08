@@ -3,7 +3,6 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "virtualNetworks_Vnet1_name": {
-            "defaultValue": "Vnet1",
             "type": "String"
         }
     },
