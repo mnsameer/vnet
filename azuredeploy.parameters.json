@@ -3,19 +3,19 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vnetName": {
-      "value": "VNet1"
+      "value": "VNet2"
     },
     "vnetAddressPrefix": {
       "value": "10.0.0.0/16"
     },
     "subnet1Name": {
-      "value": "Subnet1"
+      "value": "Subnet3"
     },
     "subnet1Prefix": {
       "value": "10.0.0.0/24"
     },
     "subnet2Name": {
-      "value": "Subnet2"
+      "value": "Subnet4"
     },
     "subnet2Prefix": {
       "value": "10.0.1.0/24"
