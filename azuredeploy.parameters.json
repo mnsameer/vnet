@@ -1,15 +1,24 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "existingVNETName": {
-      "value": "existinVNET"
+    "vnetName": {
+      "value": "VNet1"
     },
-    "newSubnetName": {
-      "value": "newSubnet"
+    "vnetAddressPrefix": {
+      "value": "10.0.0.0/16"
     },
-    "newSubnetAddressPrefix": {
+    "subnet1Name": {
+      "value": "Subnet1"
+    },
+    "subnet1Prefix": {
       "value": "10.0.0.0/24"
+    },
+    "subnet2Name": {
+      "value": "Subnet2"
+    },
+    "subnet2Prefix": {
+      "value": "10.0.1.0/24"
     }
   }
 }
