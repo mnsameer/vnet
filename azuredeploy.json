@@ -22,7 +22,7 @@
     },
     "windowsOSVersion": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "2008-R2-SP1",
       "allowedValues": [
         "2008-R2-SP1",
         "2012-Datacenter",
@@ -40,7 +40,7 @@
     "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'sawinvm')]",
     "nicName": "myVMNic",
     "addressPrefix": "10.0.0.0/16",
-    "subnetName": "Subnet",
+    "subnetName": "",
     "subnetPrefix": "10.0.0.0/24",
     "publicIPAddressName": "myPublicIP",
     "vmName": "SimpleWinVM",
