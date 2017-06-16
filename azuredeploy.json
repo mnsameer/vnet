@@ -2,192 +2,233 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "adminUsername": {
-            "type": "string",
-          "default": "sameer",
-            "metadata": {
-                "description": "User name for the Virtual Machine."
-            }
+        "virtualMachineScaleSets_vmss_name": {
+            "defaultValue": "vmss",
+            "type": "String"
         },
-        "adminPassword": {
-            "type": "string",
-            "default": "mohideensameer@93",
-            "metadata": {
-                "description": "Password for the Virtual Machine."
-            }
+        "autoscalesettings_cpuautoscale_name": {
+            "defaultValue": "cpuautoscale",
+            "type": "String"
         },
-        "dnsLabelPrefix": {
-            "type": "string",
-            "default": "junkydragon",
-            "metadata": {
-                "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
-            }
+        "loadBalancers_vmssLb_name": {
+            "defaultValue": "vmssLb",
+            "type": "String"
         },
-        "ubuntuOSVersion": {
-            "type": "string",
-            "defaultValue": "16.04.0-LTS",
-            "allowedValues": [
-                "12.04.5-LTS",
-                "14.04.5-LTS",
-                "15.10",
-                "16.04.0-LTS"
-            ],
-            "metadata": {
-                "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version."
-            }
+        "publicIPAddresses_ip01_name": {
+            "defaultValue": "ip01",
+            "type": "String"
         },
-        "index": {
-            "type": "int"
+        "virtualNetworks_vmssVnet_name": {
+            "defaultValue": "vmssVnet",
+            "type": "String"
         }
     },
     "variables": {
-        "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'salinuxvm')]",
-        "imagePublisher": "Canonical",
-        "imageOffer": "UbuntuServer",
-        "nicName": "myVMNic",
-        "addressPrefix": "10.0.0.0/16",
-        "subnetName": "Subnet",
-        "subnetPrefix": "10.0.0.0/24",
-        "storageAccountType": "Standard_LRS",
-        "publicIPAddressName": "myPublicIP",
-        "publicIPAddressType": "Dynamic",
-        "vmName": "MyUbuntuVM",
-        "vmSize": "Standard_A1",
-        "virtualNetworkName": "MyVNET",
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks/', concat(parameters('index'),variables('virtualNetworkName')))]",
-        "subnetRef": "[concat(variables('vnetID'),'/subnets/',parameters('index'),variables('subnetName'))]"
-    },
-    "resources": [
+        "maximum": 3,
+        "minimum": 1
+        },
+    "resources": 
+    [
         {
-            "type": "Microsoft.Storage/storageAccounts",
-            "name": "[concat(parameters('index'), variables('storageAccountName'))]",
-            "apiVersion": "2017-06-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "[variables('storageAccountType')]"
+            
+            "type": "Microsoft.Compute/virtualMachineScaleSets",
+            "sku": 
+            {
+                "name": "Standard_D1_v2",
+                "tier": "Standard",
+                "capacity": 1
             },
-            "kind": "Storage",
-            "properties": {}
-        },
-        {
-            "apiVersion": "2017-04-01",
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[concat(parameters('index'), variables('publicIPAddressName'))]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
-                "dnsSettings": {
-                    "domainNameLabel": "[concat(parameters('dnsLabelPrefix'), parameters('index'))]"
-                }
-            }
-        },
-        {
-            "apiVersion": "2017-04-01",
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[concat(parameters('index'), variables('virtualNetworkName'))]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "[variables('addressPrefix')]"
-                    ]
+            "name": "[parameters('virtualMachineScaleSets_vmss_name')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "westus",
+            "scale": null,
+            "copy": {
+                "name": "vmsscopy",
+                "count": 2
+
                 },
-                "subnets": [
+            "properties": 
+            {
+                "singlePlacementGroup": true,
+                "upgradePolicy": 
+                {
+                    "mode": "Manual"
+                },
+                "virtualMachineProfile": {
+                    
+                    "osProfile": 
                     {
-                        "name": "[concat(parameters('index'), variables('subnetName'))]",
-                        "properties": {
-                            "addressPrefix": "[variables('subnetPrefix')]"
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "apiVersion": "2017-04-01",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "[concat(parameters('index'), variables('nicName'))]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses/', concat(parameters('index'),variables('publicIPAddressName')))]",
-                "[resourceId('Microsoft.Network/virtualNetworks/', concat(parameters('index'),variables('virtualNetworkName')))]"
-            ],
-            "properties": {
-                "ipConfigurations": [
+                        "computerNamePrefix": "[concat(parameters('virtualMachineScaleSets_vmss_name'),'57pxx')]",
+                        "adminUsername": "admiin",
+                        "windowsConfiguration": 
+                        {
+                            "provisionVMAgent": true,
+                            "enableAutomaticUpdates": true
+                        },
+                        "adminPassword": "mohideensameer@93"
+                    },
+                    "storageProfile": 
                     {
-                        "name": "ipconfig1",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id" : "[resourceId('Microsoft.Network/publicIPAddresses/', concat(parameters('index'),variables('publicIPAddressName')))]"
-                            },
-                            "subnet": {
-                                "id": "[variables('subnetRef')]"
+                        "osDisk": 
+                        {
+                            "createOption": "FromImage",
+                            "caching": "ReadWrite",
+                            "managedDisk": 
+                            {
+                                "storageAccountType": "Standard_LRS"
                             }
+                        },
+                        "imageReference": {
+                            "publisher": "MicrosoftWindowsServer",
+                            "offer": "WindowsServer",
+                            "sku": "2016-Datacenter",
+                            "version": "latest"
                         }
-                    }
-                ]
-            }
+                    },
+                    "networkProfile": {
+                        "networkInterfaceConfigurations": [
+                            {
+                                "name": "[concat(parameters('virtualMachineScaleSets_vmss_name'),'Nic')]",
+                                "properties": {
+                                    "primary": true,
+                                    "ipConfigurations": [
+                                        {
+                                            "name": "[concat(parameters('virtualMachineScaleSets_vmss_name'),'IpConfig')]",
+                                            "properties": {
+                                                "subnet": {
+                                                    "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_vmssVnet_name')), '/subnets/default')]"
+                                                }
+                                                
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+
+                },
+                "overprovision": true
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_vmssVnet_name'))]"
+                
+            ]
         },
         {
-            "apiVersion": "2017-03-30",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "[concat(parameters('index'), variables('vmName'))]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/', concat(parameters('index'),variables('storageAccountName')))]",
-                "[resourceId('Microsoft.Network/networkInterfaces/', concat(parameters('index'),variables('nicName')))]"
-            ],
+            
+            "type": "microsoft.insights/autoscalesettings",
+            "name": "[parameters('autoscalesettings_cpuautoscale_name')]",
+            "apiVersion": "2014-04-01",
+            "location": "westus",
+            "tags": {},
+            "scale": null,
             "properties": {
-                "hardwareProfile": {
-                    "vmSize": "[variables('vmSize')]"
-                },
-                "osProfile": {
-                    "computerName": "[concat(parameters('index'), variables('vmName'))]",
-                    "adminUsername": "[parameters('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "[variables('imagePublisher')]",
-                        "offer": "[variables('imageOffer')]",
-                        "sku": "[parameters('ubuntuOSVersion')]",
-                        "version": "latest"
-                    },
-                    "osDisk": {
-                        "createOption": "FromImage"
-                    },
-                    "dataDisks": [
-                        {
-                            "diskSizeGB": "1023",
-                            "lun": 0,
-                            "createOption": "Empty"
-                        }
-                    ]
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces/', concat(parameters('index'),variables('nicName')))]"
-                        }
-                    ]
-                },
-                "diagnosticsProfile": {
-                    "bootDiagnostics": {
-                        "enabled": "true",
-                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', concat(parameters('index'),variables('storageAccountName'))), '2016-01-01').primaryEndpoints.blob)]"
+                "profiles": [
+                    {
+                        "name": "Profile1",
+                        "capacity": {
+                            "minimum": "[variables('minimum')]",
+                            "maximum": "[variables('maximum')]",
+                            "default": "1"
+                        },
+                        "rules": [
+                            {
+                                "metricTrigger": {
+                                    "metricName": "Percentage CPU",
+                                    "metricNamespace": "",
+                                    "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSets_vmss_name'))]",
+                                    "timeGrain": "PT1M",
+                                    "statistic": "Average",
+                                    "timeWindow": "PT5M",
+                                    "timeAggregation": "Average",
+                                    "operator": "GreaterThan",
+                                    "threshold": 75
+                                },
+                                "scaleAction": {
+                                    "direction": "Increase",
+                                    "type": "ChangeCount",
+                                    "value": "1",
+                                    "cooldown": "PT1M"
+                                }
+                            },
+                            {
+                                "metricTrigger": {
+                                    "metricName": "Percentage CPU",
+                                    "metricNamespace": "",
+                                    "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSets_vmss_name'))]",
+                                    "timeGrain": "PT1M",
+                                    "statistic": "Average",
+                                    "timeWindow": "PT5M",
+                                    "timeAggregation": "Average",
+                                    "operator": "LessThan",
+                                    "threshold": 25
+                                },
+                                "scaleAction": {
+                                    "direction": "Decrease",
+                                    "type": "ChangeCount",
+                                    "value": "1",
+                                    "cooldown": "PT1M"
+                                }
+                            }
+                        ]
                     }
-                }
-            }
-        }
-    ],
-    "outputs": {
-        "hostname": {
-            "type": "string",
-            "value": "[reference(concat(parameters('index'),variables('publicIPAddressName'))).dnsSettings.fqdn]"
+                ],
+                "enabled": true,
+                "name": "[parameters('autoscalesettings_cpuautoscale_name')]",
+                "targetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSets_vmss_name'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSets_vmss_name'))]"
+            ]
         },
-        "sshCommand": {
-            "type": "string",
-            "value": "[concat('ssh ', parameters('adminUsername'), '@', reference(concat(parameters('index'),variables('publicIPAddressName'))).dnsSettings.fqdn)]"
+        
+        
+        {
+            
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[parameters('publicIPAddresses_ip01_name')]",
+            "apiVersion": "2017-03-01",
+            "location": "westus",
+            "scale": null,
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "idleTimeoutInMinutes": 4,
+                "dnsSettings": {
+                    "domainNameLabel": "dragonwizard"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualNetworks_vmssVnet_name')]",
+            "apiVersion": "2017-03-01",
+            "location": "westus",
+            "scale": null,
+            "properties": 
+            {
+                "addressSpace": 
+                {
+                    "addressPrefixes": 
+                    [
+                        "10.0.0.0/16"
+                    ]
+                },
+                "subnets": 
+                [
+                    {
+                        "name": "default",
+                        "properties": 
+                        {
+                            "addressPrefix": "10.0.0.0/21"
+                        }
+                    }
+                ],
+                "virtualNetworkPeerings": []
+            },
+            "dependsOn": []
         }
-    }
+    ]
 }
