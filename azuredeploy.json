@@ -44,7 +44,7 @@
             "type": "Microsoft.Resources/deployments",
             "copy": {
                 "name": "myCopySet",
-                "count": 4,
+                "count": 2,
                 "mode": "serial",
                 "batchSize": 2
             },
