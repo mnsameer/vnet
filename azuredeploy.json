@@ -38,7 +38,7 @@
                 "tier": "Standard",
                 "capacity": 1
             },
-            "name": "[parameters('virtualMachineScaleSets_vmss_name')]",
+            "name": "[concat(copyIndex(),parameters('virtualMachineScaleSets_vmss_name'))]",
             "apiVersion": "2016-04-30-preview",
             "location": "westus",
             "scale": null,
