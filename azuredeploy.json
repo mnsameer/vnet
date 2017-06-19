@@ -21,6 +21,9 @@
         "virtualNetworks_vmssVnet_name": {
             "defaultValue": "vmssVnet",
             "type": "String"
+        },
+          "index": {
+            "type": "int"
         }
     },
     "variables": {
