@@ -25,7 +25,9 @@
     },
     "variables": {
         "maximum": 3,
-        "minimum": 1
+        "minimum": 1,
+        "subnetName": "Subnet",
+        "subnetPrefix": "10.0.0.0/24"
         },
     "resources": 
     [
@@ -38,7 +40,7 @@
                 "tier": "Standard",
                 "capacity": 1
             },
-            "name": "[parameters('virtualMachineScaleSets_vmss_name')]",
+            "name": "[concat(parameters('virtualMachineScaleSets_vmss_name'),copyIndex())]",
             "apiVersion": "2016-04-30-preview",
             "location": "westus",
             "scale": null,
@@ -83,15 +85,15 @@
                     "networkProfile": {
                         "networkInterfaceConfigurations": [
                             {
-                                "name": "[concat(parameters('virtualMachineScaleSets_vmss_name'),'Nic')]",
+                                "name": "[concat(parameters('virtualMachineScaleSets_vmss_name'),'Nic',copyIndex())]",
                                 "properties": {
                                     "primary": true,
                                     "ipConfigurations": [
                                         {
-                                            "name": "[concat(parameters('virtualMachineScaleSets_vmss_name'),'IpConfig')]",
+                                            "name": "[concat(parameters('virtualMachineScaleSets_vmss_name'),'IpConfig',copyIndex())]",
                                             "properties": {
                                                 "subnet": {
-                                                    "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_vmssVnet_name')), '/subnets/default')]"
+                                                    "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_vmssVnet_name')), copyIndex(),'/subnets/default')]"
                                                 }
                                                 
                                             }
@@ -109,7 +111,7 @@
         {
             
             "type": "microsoft.insights/autoscalesettings",
-            "name": "[parameters('autoscalesettings_cpuautoscale_name')]",
+            "name": "[concat(parameters('autoscalesettings_cpuautoscale_name'),copyIndex())]",
             "apiVersion": "2014-04-01",
             "location": "westus",
             "tags": {},
@@ -175,7 +177,7 @@
         {
             
             "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[parameters('publicIPAddresses_ip01_name')]",
+            "name": "[concat(parameters('publicIPAddresses_ip01_name'),copyIndex())]",
             "apiVersion": "2017-03-01",
             "location": "westus",
             "scale": null,
@@ -183,7 +185,7 @@
                 "publicIPAllocationMethod": "Dynamic",
                 "idleTimeoutInMinutes": 4,
                 "dnsSettings": {
-                    "domainNameLabel": "dragonwizard"
+                    "domainNameLabel": "[concat('dragonwizard',copyIndex())]"
                 }
             },
             "dependsOn": []
@@ -191,7 +193,7 @@
         {
             
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('virtualNetworks_vmssVnet_name')]",
+            "name": "[concat(parameters('virtualNetworks_vmssVnet_name'),copyIndex()]",
             "apiVersion": "2017-03-01",
             "location": "westus",
             "scale": null,
@@ -207,10 +209,9 @@
                 "subnets": 
                 [
                     {
-                        "name": "default",
-                        "properties": 
-                        {
-                            "addressPrefix": "10.0.0.0/21"
+                        "name": "[concat(parameters('index'), variables('subnetName'))]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnetPrefix')]"
                         }
                     }
                 ],
