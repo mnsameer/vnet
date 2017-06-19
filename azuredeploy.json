@@ -8,18 +8,7 @@
             },
         "addressPrefix": {
             "type": "string",
-            "deault": "10.0.0.0/16"
-        },
-       
-        "ubuntuOSVersion": {
-            "type": "string",
-            "defaultValue": "16.04.0-LTS",
-            "allowedValues": [
-                "12.04.5-LTS",
-                "14.04.5-LTS",
-                "15.10",
-                "16.04.0-LTS"
-            ]
+            "default": "10.0.0.0/16"
         }
         },
     "variables": {
