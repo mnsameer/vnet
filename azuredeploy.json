@@ -5,7 +5,7 @@
         
     },
     "variables": {
-        "templatelink": "https://raw.githubusercontent.com/mnsameer/scaling/master/deploy.json"
+        "templatelink": "https://raw.githubusercontent.com/mnsameer/demo1/master/azuredeploy.json"
     },
     "resources": [
         {
