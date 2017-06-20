@@ -24,8 +24,10 @@
                 "uri": "[variables('templatelink')]",
                 "contentVersion": "1.0.0.0"
             },
-            "parameters": {
-            }
+             "parametersLink": { 
+          "uri":"[concat('https://raw.githubusercontent.com/mnsameer/scaling/master/',parameters('newOrExisting'),'parameter')]",
+          "contentVersion":"1.0.0.0"
+       }
         }
     }
 ]
