@@ -2,35 +2,29 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "environment": {
-      "type": "string",
-      "allowedValues": [
-        "dev", "prod"
-      ]
-    }
-  },
-  "variables": {
-    "TemplateUrl": "https://raw.githubusercontent.com/mnsameer/vnet/master/azuredeploy.json",
-    "ParameterUrl": "https://raw.githubusercontent.com/mnsameer/vnet/master/azuredeploy.parameters.json"
-  },
-  "resources": [
+    
+    },
+    
+"variables": {
+  
+},
+"resources": [
     {
-      "apiVersion": "2015-01-01",
-      "name": "Nested Template",
-      "type": "Microsoft.Resources/deployments",
-      
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('TemplateUrl')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parametersLink": {
-          "uri": "[variables('ParameterUrl')]",
-          "contentVersion": "1.0.0.0"
+        "apiVersion": "2015-01-01",
+        "name": "nestedTemplate",
+        "type": "Microsoft.Resources/deployments",
+        "properties": {
+            "mode": "incremental",
+            "templateLink": {
+                "uri": "https://raw.githubusercontent.com/mnsameer/vnet/master/azuredeploy.json",
+                "contentVersion": "1.0.0.0"
+            },
+             "parametersLink": { 
+          "uri":"https://raw.githubusercontent.com/mnsameer/vnet/master/azuredeploy.parameters.json",
+          "contentVersion":"1.0.0.0"
+       }
+          
         }
-        
-      }
     }
-  ]
+]
 }
