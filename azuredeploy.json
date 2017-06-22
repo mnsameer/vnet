@@ -5,7 +5,7 @@
    "parameters":{
     "VNetSettings":{
               "type": "object",
-             "defaultValue":[
+             "defaultValue":
                {
             "name":"VNet1",
             "addressPrefixes": [
@@ -25,7 +25,7 @@
                 }
             ]
         }
-               ]
+               
     }
 },
   "resources": [
