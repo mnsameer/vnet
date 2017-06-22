@@ -3,8 +3,7 @@
   "contentVersion": "1.0.0.0",
  "parameters":{
     "VNetSettings":{
-      "type": "object",
-        "value":{
+             "value":{
             "name":"VNet1",
             "addressPrefixes": [
                 {
