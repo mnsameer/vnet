@@ -25,7 +25,11 @@
             ]
         }
                
-    }
+    },
+     "prod":{
+       "type": "object",
+       "defaultValue": " "
+     }
 },
   "resources": [
     {
