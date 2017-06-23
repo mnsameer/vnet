@@ -7,13 +7,7 @@
       "defaultValue": 
       { 
         "storageAccountType": "Standard_LRS"
-      },
-      "allowedValues": [
-        "Standard_LRS",
-        "Standard_GRS",
-        "Standard_ZRS",
-        "Premium_LRS"
-      ]
+      }
     },
     "dev":{
               "type": "object",
