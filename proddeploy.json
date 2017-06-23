@@ -4,7 +4,10 @@
   "parameters": {
     "prod": {
       "type":"object",
-      "defaultValue": "Standard_LRS",
+      "defaultValue": 
+      { 
+        "storageAccountType": "Standard_LRS"
+      },
       "allowedValues": [
         "Standard_LRS",
         "Standard_GRS",
