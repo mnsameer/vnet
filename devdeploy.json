@@ -27,8 +27,7 @@
                
     },
      "prod":{
-       "type": "object",
-       "defaultValue": "Standard_GRS"
+       "type": "object"
      }
 },
   "resources": [
