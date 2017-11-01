@@ -1,0 +1,359 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+  "devDisksUrl": {
+      "value": null,
+      "type": "string",
+      "metadata": {
+        "description": "URL for the Oracle Disk Create template, used to create all data disks, reused here the disks as well"
+      }
+    },
+    "nodeName": {
+      "value": null,
+      "type": "object",
+      "metadata": {
+        "description": "Name of the scale set, i.e. jpdc-dev"
+      }
+    },
+
+    "settings": {
+      "value": null,
+      "type": "object",
+      "metadata": {
+        "description": "Object Containing all of the common settings for AD, api versions, VM Sizing, etc. See the parameters-XXX.json."
+      }
+    },
+	"availabilitySetName": {
+      "value": null,
+      "type": "String",
+      "metadata": {
+        "description": "Name of the availability set to have each node part of"
+      }
+    }
+    },
+
+  "variables": {
+    "imageVHDUri": "[parameters('settings').imageVHDUri]",
+    "image": "[concat(parameters('nodeName').name, '-img')]",
+    "osdisk": "[concat(parameters('nodeName').name, '-osdisk')]",
+    "diskPre": "[concat(parameters('nodeName').name, '-dsk-')]",
+    "vmName": "[concat(parameters('nodeName'),'-vm')]",
+    "vmSize": "[parameters('settings').vmSizes.devvmsize]",
+    "count": "[parameters('settings').nodeCount.devvm]",
+
+    "NICName": "[concat(parameters('nodeName'), '-nic1')]",
+    "ipArray": "[parameters('settings').network.devNodeIps]",
+
+    "devVnetRg": "[parameters('settings').network.devVnetRg]",
+    "devVnet": "[parameters('settings').network.devVnet]",
+    "devSubnet": "[parameters('settings').network.devSubnet]",
+	"devVMmNsg":"[parameters('settings').network.devVMmNsg]",
+	"diskCreate": "[parameters('settings').vmDisks]",
+	"devNodePre": "[concat('jpdc-', toLower(parameters('settings').stage), parameters('settings').locationAbbrv)]"
+
+  },
+
+  "resources": [
+    {
+      "comments": "Create an Image from the specified Baseline vhd",
+      "type": "Microsoft.Compute/images",
+      "name": "[variables('image')]",
+      "apiVersion": "[parameters('settings').apiVersions.compute]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [ ],
+      "properties": {
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Linux",
+            "osState": "Generalized",
+            "blobUri": "[variables('imageVHDUri')]",
+            "caching": "ReadWrite",
+            "storageAccountType": "[parameters('settings').defaultStorageType]"
+          }
+        }
+      }
+    },
+	        {
+            "comments": "Generalized from resource: networkSecurityGroups/jpdc-dev-vm-nsg",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('settings').network.devVMmNsg]",
+            "apiVersion": "2017-06-01",
+            "location": "westus",
+            "scale": null,
+            "properties": {
+                "provisioningState": "Succeeded",
+
+                "securityRules": [
+                    {
+                        "name": "default-allow-rdp",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound",
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "DNS-TCP",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "53",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Outbound",
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ],
+                "defaultSecurityRules": [
+                    {
+                        "name": "AllowVnetInBound",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow inbound traffic from all VMs in VNET",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 65000,
+                            "direction": "Inbound",
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+
+                    {
+                        "name": "DenyAllInBound",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Deny all inbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 65500,
+                            "direction": "Inbound",
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "AllowVnetOutBound",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow outbound traffic from all VMs to all VMs in VNET",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 65000,
+                            "direction": "Outbound",
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "AllowInternetOutBound",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow outbound traffic from all VMs to Internet",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "Internet",
+                            "access": "Allow",
+                            "priority": 65001,
+                            "direction": "Outbound",
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "DenyAllOutBound",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Deny all outbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 65500,
+                            "direction": "Outbound",
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        },
+
+      {
+            "comments": "Generalized from resource: virtualNetworks/jpdc-dev-vnet'.",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('settings').network.devVnet]",
+            "apiVersion": "2017-06-01",
+            "location": "westus",
+            "scale": null,
+            "properties": {
+                "provisioningState": "Succeeded",
+                "resourceGuid": "7490f1bc-585e-4462-bce3-f27d73855b66",
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.44.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "jpdc-dev-subnet",
+                        "etag": "W/\"54d876d2-4962-454f-8d1d-f71caf8ff8e9\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "addressPrefix": "10.44.6.0/24"
+                        }
+                    }
+                ],
+                "virtualNetworkPeerings": []
+            },
+            "dependsOn": []
+        },
+
+		{
+		"comments": "Network Interface for this dev node, should be a static IP",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('NICName')]",
+      "apiVersion": "[parameters('settings').apiVersions.network]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [ ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAddress": "[parameters('settings').network.devNodeIps]",
+              "privateIPAllocationMethod": "Static",
+              "subnet": {
+                "id": "[concat(resourceId(variables('devVnetRg'), 'Microsoft.Network/virtualNetworks', variables('devVnet')), '/subnets/', variables('devSubnet'))]"
+              }
+            }
+          }
+        ],
+        "dnsSettings": {
+          "dnsServers": ["[parameters('settings').DNSServerAddress)]"]
+        },
+        "enableIPForwarding": false
+      }
+    },
+
+
+    {
+      "comments": "dev Virtual Node(s). Runs fixed jobs.",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[variables('vmName')]",
+      "apiVersion": "[parameters('settings').apiVersions.compute]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/images', variables('image'))]",
+		"[resourceId('Microsoft.Network/networkInterfaces', variables('NICName'))]"
+
+      ],
+      "tags": {
+        "displayName": "VirtualMachine",
+        "node": "devnode"
+      },
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySetName'))]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[variables('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('vmName')]",
+          "adminUsername": "[parameters('settings').adminUsername]",
+		  "adminPassword": "[parameters('settings').adminPassword]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "id": "[resourceId('Microsoft.Compute/images', variables('image'))]"
+          },
+          "osDisk": {
+            "name": "[variables('osdisk')]",
+            "osType": "Linux",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[parameters('settings').defaultStorageType]"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('NICName'))]"
+            }
+          ]
+        }
+      }
+    },
+	{
+      "comments": "Create all of the data disks, thes need to be attached manualy for now using th mountAll script",
+      "name": "[concat('devNode', parameters('nodeName').number, parameters('settings').locationAbbrv, '-Disk-', copyIndex(1))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "[parameters('settings').apiVersions.deploy]",
+
+      "copy": {
+        "name": "devdiskscopy",
+        "count": "[length(variables('diskCreate'))]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[parameters('devDisksUrl')]",
+          "contentVersion": "1.0.0.0"
+        },
+
+        "parameters": {
+          "nodeName": {
+            "value": {
+              "name": "[concat(variables('diskPre'), variables('diskCreate')[copyIndex()].Nm)]",
+              "number": "[copyIndex(1)]"
+            }
+          },
+          "diskSize": {
+            "value": "[variables('diskCreate')[copyIndex()].Sz]"
+          },
+
+          "settings": {
+            "value": "[parameters('settings')]"
+          }
+        }
+      }
+    }
+  ]
+}
