@@ -1,0 +1,82 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "keyVaultNm": {
+      "value": "jpdc-global-dev-kv"
+    },
+
+    "keyVaultRg": {
+      "value": "jpdc-storage-westus-rg"
+    },
+
+    "adminUsername":{
+    "value": "jpdc-admin"
+   },
+    "adminPassword":{
+    "value": "Jpdc-admin1234"
+   },
+
+    "settings": {
+      "value": {
+        "stage": "dev",
+        "location": "westus",
+        "locationAbbrv": "",
+
+        "imageVHDUri": "https://jpdcprivgrsstadevwestus.blob.core.windows.net/images/baseline-osDisk-299898935.vhd",
+
+        "vmSizes": {
+          "vmSizes": {
+            "appGateway": "Standard_Small",
+  		      "dev" : "Standard_DS2_v2"
+        },
+
+        "defaultStorageType":"Premium_LRS",
+
+        "nodeCount": {
+          "appGatewayCapacity": 2,
+		      "dev" : 1
+        },
+
+        "apiVersions": {
+          "compute": "2017-03-30",
+          "deploy": "2015-01-01",
+          "extension": "2015-06-15",
+          "network": "2017-06-01",
+          "serviceBus": "2017-04-01"
+        },
+
+        "quote": "'",
+
+        "network": {
+          "devVnetRg": "jpdc-test-rg",
+          "devVnet": "jpdc-arm-validation-vnet",
+          "devSubnet": "jpdc-subnet",
+		      "gatewaysubnet": "jpdc-dev-gatewaysubnet",
+		      "devappgateway": "jpdc-dev-appgateway",
+          "devNodeIps":  ["10.44.6.26"],
+          "devGatewayIp": "10.44.6.37",
+
+          "devGatewayVnet": "jpdc-services-vnet",
+		      "devLoadBal": "10.44.6.80",
+          "devGatewaySubnet": "jpdc-appgateway-subnet",
+          "devNodeSubnet": "jpdc-application-subnet",
+		      "devVMmNsg":  "jpdc-dev-vm-nsg",
+		      "securityRulesrdpname": "default-allow-rdp"
+        },
+
+        "vmDisks": [
+          {"Nm": "vmdisk", "Sz": "750"},
+          {"Nm": "vmdisk", "Sz": "750"},
+          {"Nm": "vmdisk", "Sz": "750"}
+        ]
+        }
+      }
+    },
+
+    "templateUrl": {
+      "value": "https://github.com/mnsameer/vnet"
+    }
+  }
+}
