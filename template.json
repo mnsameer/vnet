@@ -1,0 +1,297 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "keyVaultNm": {
+      "value": null,
+      "type": "string",
+      "metadata": {
+        "description": "Key vault name, contains keys for logging into the AD"
+      }
+    },
+
+    "keyVaultRg": {
+      "value": null,
+      "type": "string",
+      "metadata": {
+        "description": "Resource Group for the above Key vault"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "User name for the Virtual Machine."
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the Virtual Machine."
+      }
+    },
+    "settings": {
+      "value": null,
+      "type": "object",
+      "metadata": {
+        "description": "Object Containing all of the common settings for AD, api versions, VM Sizing, etc. See the parameters-XXX.json."
+      }
+    },
+    "templateUrl": {
+      "value": null,
+      "type": "string",
+      "metadata": {
+        "description": "Base URL where the JPDC Templates are located"
+      }
+    }
+  },
+
+  "variables": {
+    "availabilitySetName": "[concat('jpdc-dev-avail', parameters('settings').locationAbbrv)]",
+    "keyVault": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('keyVaultRg'), '/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultNm'))]",
+
+    "devUrl": "[concat(parameters('templateUrl'), '/dev.json')]",
+    "nsgUrl": "[concat(parameters('templateUrl'), '/nsg.json')]",
+	  "policyUrl": "[concat(parameters('templateUrl'), '/policy.json')]",
+	  "backupUrl": "[concat(parameters('templateUrl'), '/backup.json')]",
+
+    "resourcegrp": "[concat('jpdc','-arm', parameters('settings').locationAbbrv, '-rg')]",
+	  "devNodePre": "[concat('jpdc-', toLower(parameters('settings').stage), parameters('settings').locationAbbrv)]",
+	  "loadBalancerName": "[concat('jpdc-', parameters('settings').stage, '-lb', parameters('settings').locationAbbrv)]",
+    "lbID": "[resourceId('Microsoft.Network/loadBalancers','DevLB')]",
+    "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]",
+    "lbPoolID": "[concat(variables('lbID'),'/backendAddressPools/BackendPool1')]",
+    "lbProbeID": "[concat(variables('lbID'),'/probes/tcpProbe')]",
+    "devVnetRg": "[parameters('settings').network.devVnetRg]",
+    "devVnet": "[parameters('settings').network.devVnet]",
+    "devSubnet": "[parameters('settings').network.devSubnet]"
+  },
+  "resources": [
+    {
+            "comments": "Generalized from resource: virtualNetworks",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('devVnet')]",
+            "apiVersion": "2017-06-01",
+            "location": "[resourceGroup().location]",
+            "scale": null,
+            "properties": {
+                "provisioningState": "Succeeded",
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.44.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('devSubnet')]",
+
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "addressPrefix": "10.44.6.0/24"
+                        }
+                    },
+					          {
+                        "name": "[parameters('settings').network.gatewaysubnet]",
+
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "addressPrefix": "10.44.7.0/24"
+                        }
+                    }
+                ],
+                "virtualNetworkPeerings": []
+            },
+            "dependsOn": []
+    },
+    
+    {
+      "comments": "Call the common template to prepare the AD join command and OMS Custom Data string",
+      "name": "devNodes",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "[parameters('settings').apiVersions.deploy]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', 'devVnet')]",
+        "[concat('Microsoft.Resources/deployments/', 'NSG-Rules')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('devUrl')]",
+          "contentVersion": "1.0.0.0"
+        },
+
+        "parameters": {
+          "devDisksUrl": {
+            "value": "[concat(parameters('templateUrl'), '/devDisks.json')]"
+          },
+          "nodeName": {
+            "value": {
+              "name": "[concat(variables('devNodePre'))]"
+
+            }
+          },
+		  "adminUsername": {
+      "value": "[parameters('adminUsername')]"
+    },
+		  "adminPassword": {
+      "value": "[parameters('adminPassword')]"
+    },
+
+          "settings": {
+            "value": "[parameters('settings')]"
+          },
+		  "availabilitySetName": {
+            "value": "[variables('availabilitySetName')]"
+          }
+        }
+      }
+    },
+
+    {
+      "comments": "Availabity set that contains the dev nodes, do not want both down at the same time.",
+      "type": "Microsoft.Compute/availabilitySets",
+      "sku": {
+        "name": "Aligned"
+      },
+      "name": "[variables('availabilitySetName')]",
+      "apiVersion": "[parameters('settings').apiVersions.compute]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "platformUpdateDomainCount": 5,
+        "platformFaultDomainCount": 2
+      }
+    },
+	{
+            "comments": "Generalized from resource loadBalancers",
+            "type": "Microsoft.Network/loadBalancers",
+            "name": "[variables('loadBalancerName')]",
+            "apiVersion": "2017-06-01",
+            "location": "westus",
+            "scale": null,
+            "properties": {
+                "provisioningState": "Succeeded",
+                "frontendIPConfigurations": [
+                    {
+                        "name": "LoadBalancerFrontend",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "privateIPAddress": "10.44.24.4",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(resourceId(variables('devVnetRg'), 'Microsoft.Network/virtualNetworks', variables('devVnet')), '/subnets/', variables('devSubnet'))]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "bastionVirtualMachines",
+                        "properties": {
+                            "provisioningState": "Succeeded"
+                        }
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "ssh",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "frontendIPConfiguration": {
+                                "id": "[parameters('loadBalancers_jpdc_bastion_lb_id')]"
+                            },
+                            "frontendPort": 22,
+                            "backendPort": 22,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 15,
+                            "protocol": "Tcp",
+                            "loadDistribution": "SourceIPProtocol",
+                            "backendAddressPool": {
+                                "id": "[parameters('loadBalancers_jpdc_bastion_lb_id_1')]"
+                            },
+                            "probe": {
+                                "id": "[parameters('loadBalancers_jpdc_bastion_lb_id_2')]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "sshprobe",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "protocol": "Tcp",
+                            "port": 22,
+                            "intervalInSeconds": 15,
+                            "numberOfProbes": 4
+                        }
+                    }
+                ],
+                "inboundNatRules": [],
+                "outboundNatRules": [],
+                "inboundNatPools": []
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('settings').network.devVnet)]"
+            ]
+        },
+
+
+
+    {
+      "name": "JPDC-Dev-Policy",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "[parameters('settings').apiVersions.deploy]",
+      "dependsOn": [
+        "[concat('Microsoft.Resources/deployments/', 'devNodes')]",
+        "[concat('Microsoft.Compute/availabilitySets/', variables('availabilitySetName'))]"
+      ],
+
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('policyUrl')]",
+          "contentVersion": "1.0.0.0"
+        },
+
+    "parameters": {
+    "vaultName": {
+      "value": "devbackup"
+    },
+    "policyName": {
+        "value": "DailyBackupPolicy1"
+    },
+    "scheduleRunDays": {
+        "value": [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ]
+    },
+    "scheduleRunTimes": {
+        "value": [ "2016-09-21T05:30:00Z" ]
+    },
+    "weeklyRetentionDurationCount": {
+        "value": 104
+    },
+    "daysOfTheWeekForMontlyRetention": {
+        "value": [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ]
+    },
+    "weeksOfTheMonthForMonthlyRetention": {
+        "value": [ "First", "Third" ]
+    },
+    "monthlyRetentionDurationCount": {
+        "value": 60
+    },
+    "monthsOfYear": {
+        "value": [ "January", "March", "August" ]
+    },
+    "daysOfTheWeekForYearlyRetention": {
+        "value": [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ]
+    },
+    "weeksOfTheMonthForYearlyRetention": {
+        "value": [ "First", "Third" ]
+    },
+    "yearlyRetentionDurationCount": {
+        "value": 10
+    }
+  }
+      }
+    }
+
+  ]
+}
