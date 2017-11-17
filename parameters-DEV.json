@@ -1,0 +1,83 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+    "keyVaultNm": {
+      "value": "jpdc-global-dev-kv"
+    },
+
+    "keyVaultRg": {
+      "value": "jpdc-storage-westus-rg"
+    },
+	"adminUsername":{
+     "value": "jpdc-admin"
+    },
+	"adminPassword":{
+	"value": "Jpdc-admin1234"
+	},
+
+    "settings": {
+      "value": {
+        "stage": "DEV",
+        "location": "westus",
+        "locationAbbrv": "",
+
+
+
+
+
+        "imageVHDUri": "https://jpdcprivgrsstadevwestus.blob.core.windows.net/images/baseline-osDisk-299898935.vhd",
+
+
+        "vmSizes": {
+          "appGateway": "Standard_Small",
+		  "devvmsize" : "Standard_DS2_v2"
+        },
+
+        "defaultStorageType":"Premium_LRS",
+
+        "nodeCount": {
+          "appGatewayCapacity": 2,
+		  "devvm" : 2
+        },
+
+        "apiVersions": {
+          "compute": "2017-03-30",
+          "deploy": "2015-01-01",
+          "extension": "2015-06-15",
+          "network": "2017-06-01",
+          "serviceBus": "2017-04-01"
+        },
+
+        "quote": "'",
+
+        "network": {
+          "devVnetRg": "jpdc-arm-validation",
+          "devVnet": "jpdc-arm-validation-vnet",
+          "devSubnet": "jpdc-subnet",
+          "devLBip": "10.45.0.25",
+          "devNodeIps": "10.45.0.26",
+          "devGatewayIp": "10.45.0.37",
+          "devGatewayVnet": "jpdc-services-vnet",
+          "devGatewaySubnet": "jpdc-appgateway-subnet",
+          "devNodeSubnet": "jpdc-application-subnet",
+		  "devVMmNsg":  "jpdc-dev-vm-nsg",
+		  "securityRulesrdpname": "default-allow-rdp"
+        },
+
+        "vmDisks": [
+          {"Nm": "cassandra", "Sz": "750"},
+          {"Nm": "cassandra", "Sz": "750"},
+          {"Nm": "cassandra", "Sz": "750"}
+
+        ]
+
+      }
+    },
+
+    "templateUrl": {
+      "value": "https://raw.githubusercontent.com/madhumithaj/madhu2_repo/master/"
+    }
+  }
+}
