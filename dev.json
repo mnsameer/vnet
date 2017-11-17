@@ -295,7 +295,7 @@
       "apiVersion": "[parameters('settings').apiVersions.network]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
-         "[concat('Microsoft.Network/loadBalancers/','JPDC-LB')]"
+         "[concat('Microsoft.Network/loadBalancers/','JPDC-LB')]",
          "[concat('Microsoft.Network/virtualNetworks/', parameters('settings').network.devVnet)]"
 		 ],
       "properties": {
