@@ -50,7 +50,7 @@
   },
 
   "variables": {
-    "availabilitySetName": "[concat('jpdc-','dev'','-avail', parameters('settings').locationAbbrv)]",
+    "availabilitySetName": "[concat('jpdc-','dev','-avail', parameters('settings').locationAbbrv)]",
     "keyVault": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('keyVaultRg'), '/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultNm'))]",
 
     "devUrl": "[concat(parameters('templateUrl'), '/dev.json')]",
